@@ -9,8 +9,7 @@ import java.util.HashMap;
  * Created by Ilia Sheiko on 20/12/2017.
  */
 public class Main {
-    static HashMap<TriLine, HashMap<TriChar, Integer>> triLineMap;
-    static HashMap<ArrayList<Integer>, HashMap<TriChar, Integer>> premutationMap;
+    static HashMap<TriLine, HashMap<TriGram, Integer>> triLineMap;
     static int minimalCount = 3;
     static int secondMinimalCount = 2;
 
@@ -20,7 +19,6 @@ public class Main {
         int heigth = 6;
         int width = 25;
         triLineMap = new HashMap<>();
-        premutationMap = new HashMap<>();
         try {
             inspectTable(input, heigth, width);
         } catch (IOException e) {
@@ -49,10 +47,10 @@ public class Main {
                             TriLine newUberKey = new TriLine(firstLine, secondLine, thirdLine);
                             triLineMap.put(newUberKey, new HashMap<>());
                             for (int iter = 0; iter < width; iter++) {
-                                TriChar triChar = new TriChar(lines.get(firstLine).get(iter), lines.get(secondLine).get(iter), lines.get(thirdLine).get(iter));
-                                if (!triLineMap.get(newUberKey).containsKey(triChar))
-                                    triLineMap.get(newUberKey).put(triChar, 1);
-                                else triLineMap.get(newUberKey).put(triChar, triLineMap.get(newUberKey).get(triChar)+1);
+                                TriGram triGram = new TriGram(lines.get(firstLine).get(iter), lines.get(secondLine).get(iter), lines.get(thirdLine).get(iter));
+                                if (!triLineMap.get(newUberKey).containsKey(triGram))
+                                    triLineMap.get(newUberKey).put(triGram, 1);
+                                else triLineMap.get(newUberKey).put(triGram, triLineMap.get(newUberKey).get(triGram)+1);
                             }
                         }
                     }
@@ -75,16 +73,16 @@ public class Main {
         BufferedWriter output = new BufferedWriter(new FileWriter(file));
         for (ArrayList<Integer> permutation : permutations){
 
-            HashMap<TriChar, Integer> triGrams = new HashMap<>();
-            HashMap<TriChar, Integer> goodTriGrams = new HashMap<>();
-            HashMap<TriChar, Integer> fineTriGrams = new HashMap<>();
+            HashMap<TriGram, Integer> triGrams = new HashMap<>();
+            HashMap<TriGram, Integer> goodTriGrams = new HashMap<>();
+            HashMap<TriGram, Integer> fineTriGrams = new HashMap<>();
             for (int i = 0; i < heigth; i++){
                 if (i < heigth-2) {
                     int j = i+1;
                     int k = i+2;
                     TriLine triLine = new TriLine(permutation.get(i), permutation.get(j), permutation.get(k));
-                    HashMap<TriChar, Integer> localTriGrams = triLineMap.get(triLine);
-                    for (TriChar characters : localTriGrams.keySet())
+                    HashMap<TriGram, Integer> localTriGrams = triLineMap.get(triLine);
+                    for (TriGram characters : localTriGrams.keySet())
                         if (!triGrams.containsKey(characters))
                             triGrams.put(characters, localTriGrams.get(characters));
                         else triGrams.replace(characters, triGrams.get(characters) + localTriGrams.get(characters));
@@ -95,16 +93,16 @@ public class Main {
                     int thirdLine = i+1 < heigth ? i + 1 : i + 1 - heigth;
 
                     for (int iter = 0; iter < width-1; iter++) {
-                        TriChar triChar = secondLine > firstLine ?
-                                  new TriChar(lines.get(firstLine).get(iter), lines.get(secondLine).get(iter), lines.get(thirdLine).get(iter+1))
-                                : new TriChar(lines.get(firstLine).get(iter), lines.get(secondLine).get(iter + 1), lines.get(thirdLine).get(iter+1));
-                        if (!triGrams.containsKey(triChar))
-                            triGrams.put(triChar, 1);
-                        else triGrams.put(triChar, triGrams.get(triChar)+1);
+                        TriGram triGram = secondLine > firstLine ?
+                                  new TriGram(lines.get(firstLine).get(iter), lines.get(secondLine).get(iter), lines.get(thirdLine).get(iter+1))
+                                : new TriGram(lines.get(firstLine).get(iter), lines.get(secondLine).get(iter + 1), lines.get(thirdLine).get(iter+1));
+                        if (!triGrams.containsKey(triGram))
+                            triGrams.put(triGram, 1);
+                        else triGrams.put(triGram, triGrams.get(triGram)+1);
                     }
                 }
             }
-            for (TriChar triGram : triGrams.keySet()){
+            for (TriGram triGram : triGrams.keySet()){
                 if (triGrams.get(triGram) == minimalCount)
                     goodTriGrams.put(triGram, triGrams.get(triGram));
                 if (triGrams.get(triGram) == secondMinimalCount)
@@ -117,7 +115,7 @@ public class Main {
                     output.write(integer+ " ");
                 output.write("Decoded: " + inputToPermutation(permutation, input, heigth, width));
                 output.write("\n");
-                for (TriChar characters : goodTriGrams.keySet()){
+                for (TriGram characters : goodTriGrams.keySet()){
                     output.write("  Trigram: " + characters.toString());
                     output.write("\n  Count: " + goodTriGrams.get(characters)+ "\n");
                     output.write("\n");
@@ -129,9 +127,16 @@ public class Main {
         output.close();
     }
 
-//    private static void inspectPermutation(ArrayList<Integer> permutation, int depth, ArrayList<>){
-//
-//    }
+    private static void inspectPermutation(ArrayList<Integer> permutation, int depth, int heigth, PermutationBranch parent){
+        PermutationBranch branch = new PermutationBranch();
+        branch.setParent(parent);
+        if (depth >= 3){
+            TriLine triLine = new TriLine(permutation.get(depth), permutation.get(depth-1), permutation.get(depth-2));
+            HashMap<TriGram, Integer> localTriGrams = triLineMap.get(triLine);
+            for (TriGram triGram : localTriGrams.keySet())
+                branch.putOrAppendTrigram(triGram, localTriGrams.get(triGram));
+        }
+    }
 
     private static String inputToPermutation(ArrayList<Integer> key, char[] input, int heigth, int width){
         String toRet = "";
